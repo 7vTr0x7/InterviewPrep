@@ -1,5 +1,3 @@
-import React from "react";
-import { use } from "react";
 import { useState } from "react";
 
 const fileExplorerData = [
@@ -76,7 +74,7 @@ const fileExplorerData = [
   },
 ];
 
-const FileExplorer = ({ data, addHandler }) => {
+const FileExplorer = ({ data, addHandler, deleteHandler }) => {
   const [Open, setOpen] = useState({});
   const handleOpen = (e, node) => {
     e.stopPropagation();
@@ -94,13 +92,18 @@ const FileExplorer = ({ data, addHandler }) => {
           <span>{node.name}</span>
           {node.type === "folder" && (
             <>
-              <span onClick={() => addHandler(node, "folder")}> {"📁"} + </span>
-              <span onClick={() => addHandler(node, "file")}> {"📄"} + </span>
+              <span onClick={() => addHandler(node, "folder")}> {"📁"} </span>
+              <span onClick={() => addHandler(node, "file")}> {"📄"} </span>
             </>
           )}
+          <span onClick={() => deleteHandler(node, "file")}> {"❌"} </span>
           <div style={{ marginLeft: "10px" }}>
             {Open[node.id] && node.children && (
-              <FileExplorer data={node.children} />
+              <FileExplorer
+                data={node.children}
+                addHandler={addHandler}
+                deleteHandler={deleteHandler}
+              />
             )}
           </div>
         </div>
@@ -114,6 +117,7 @@ const App = () => {
 
   const addHandler = (parent, type) => {
     const name = prompt("enter name");
+    if (!name) return;
     const updateNode = (list) => {
       return list.map((node) => {
         if (node.id === parent.id) {
@@ -121,7 +125,7 @@ const App = () => {
             ...node,
             children: [
               ...node.children,
-              { id: Math.random(), name, type, children: [] },
+              { id: Date.now().toLocaleString(), name, type, children: [] },
             ],
           };
         }
@@ -136,9 +140,28 @@ const App = () => {
     setData((prev) => updateNode(prev));
   };
 
+  const deleteHandler = (node) => {
+    const updateNodes = (list) => {
+      return list
+        .filter((item) => item.id !== node.id)
+        .map((item) => {
+          if (item.children) {
+            return { ...item, children: updateNodes(item.children) };
+          }
+          return item;
+        });
+    };
+
+    setData((prev) => updateNodes(prev));
+  };
+
   return (
     <div>
-      <FileExplorer data={data} addHandler={addHandler} />
+      <FileExplorer
+        data={data}
+        addHandler={addHandler}
+        deleteHandler={deleteHandler}
+      />
     </div>
   );
 };
